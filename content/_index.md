@@ -8,7 +8,7 @@ sections:
   - block: hero
     content:
       title: |
-        DRSK Research Group
+        DRSK Research Lab
       image:
         filename: welcome.jpg
       text: |
