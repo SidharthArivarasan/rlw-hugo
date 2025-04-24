@@ -4,29 +4,36 @@ const path = require("path");
 
 const COUNT_FILE = path.join(__dirname, ".sync-count");
 
-// Setup Git identity
-execSync("git config --global user.email 'sidhartharivarasan@gmail.com'");
-execSync("git config --global user.name 'Sidharth Arivarasan (AutoSync)'");
-
 try {
-  // Step 1: Load or initialize commit counter
+  // Setup Git identity
+  execSync("git config --global user.email 'sidhartharivarasan@gmail.com'");
+  execSync("git config --global user.name 'Sidharth Arivarasan (AutoSync)'");
+
+  // Load or init sync counter
   let count = 1;
   if (fs.existsSync(COUNT_FILE)) {
     count = parseInt(fs.readFileSync(COUNT_FILE, "utf-8")) + 1;
   }
   fs.writeFileSync(COUNT_FILE, count.toString());
 
-  // Step 2: Stage Markdown content
-  execSync("git add content/post/");
+  // Check if there are any changes in content/post
+  const hasChanges = execSync("git status --porcelain content/post")
+    .toString()
+    .trim().length > 0;
 
-  // Step 3: Commit the changes
-  execSync(`git commit -m "chore: sync Strapi blog content [build #${count}]"`);
+  if (hasChanges) {
+    execSync("git add content/post/");
+    execSync(`git commit -m "chore: sync Strapi blog content [build #${count}]"`);
 
-  // Step 4: Push to your GitHub repo with token auth
-  const repoURL = "https://SidharthArivarasan:" + process.env.GH_TOKEN + "@github.com/SidharthArivarasan/rlw-hugo.git";
-  execSync(`git push ${repoURL}`);
+    // Push using GH_TOKEN
+    const repoURL = "https://SidharthArivarasan:" + process.env.GH_TOKEN + "@github.com/SidharthArivarasan/rlw-hugo.git";
+    execSync(`git push ${repoURL}`);
 
-  console.log(`✅ Blog content committed and pushed to GitHub. Build #${count}`);
+    console.log(`✅ Markdown files pushed to GitHub (build #${count})`);
+  } else {
+    console.log("ℹ️ No new blog content to sync.");
+  }
+
 } catch (err) {
   console.warn("⚠️ Git sync failed:", err.message);
 }

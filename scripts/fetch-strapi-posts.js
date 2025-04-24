@@ -31,6 +31,19 @@ async function fetchBlogs() {
       fs.mkdirSync(OUTPUT_DIR, { recursive: true });
     }
 
+    const existingFiles = fs.readdirSync(OUTPUT_DIR).filter(f => f.endsWith(".md"));
+    const fetchedSlugs = blogs.map(b => b.slug);
+    const staleFiles = existingFiles.filter(f => {
+      const slug = f.replace(/\.md$/, "");
+      return !fetchedSlugs.includes(slug);
+    });
+    
+    staleFiles.forEach(file => {
+      const filePath = path.join(OUTPUT_DIR, file);
+      fs.unlinkSync(filePath);
+      console.log(`🗑️ Deleted stale blog: ${file}`);
+    });    
+
     blogs.forEach((blog) => {
       const {
         title,
