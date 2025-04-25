@@ -2,6 +2,7 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
+// Your deployed Strapi blog API (v5-safe, published only)
 const STRAPI_API = "https://strapi-skrlw.onrender.com/api/blogs?filters[publication_state][$eq]=published";
 const OUTPUT_DIR = path.resolve(__dirname, "../content/post");
 
@@ -27,10 +28,25 @@ async function fetchBlogs() {
       return;
     }
 
+    // 🧹 Clean up stale blog files
     if (!fs.existsSync(OUTPUT_DIR)) {
       fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-    }    
+    }
 
+    const existingFiles = fs.readdirSync(OUTPUT_DIR).filter(f => f.endsWith(".md"));
+    const fetchedSlugs = blogs.map(b => b.slug);
+    const staleFiles = existingFiles.filter(file => {
+      const slug = file.replace(/\.md$/, "");
+      return !fetchedSlugs.includes(slug);
+    });
+
+    staleFiles.forEach(file => {
+      const filePath = path.join(OUTPUT_DIR, file);
+      fs.unlinkSync(filePath);
+      console.log(`🗑️ Deleted stale blog: ${file}`);
+    });
+
+    // 📝 Save new/updated blog entries
     blogs.forEach((blog) => {
       const {
         title,
